@@ -12,8 +12,10 @@ import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.kcthota.enums.RequestType;
+import com.kcthota.http.Executor;
 import com.kcthota.http.Request;
 import com.kcthota.http.Response;
 
@@ -94,6 +96,33 @@ public class BasicTest {
 		assertThat(response.getPayload()).isEqualTo(body);
 		
 		assertThat(request.getExpressionResult()).isEqualTo(true);
+	}
+	
+	@Test
+	public void ExecGetWithJsonTest() {
+		String endPoint ="/"+UUID.randomUUID().toString();
+		String body = "{\"a\":\"b\"}";
+		
+		stubFor(get(urlEqualTo(endPoint))
+	            .willReturn(aResponse()
+	                .withStatus(200)
+	                .withHeader("Content-Type", "application/json")
+	                .withBody(body)));
+		
+		String jsonRequestPayload = "{\"url\":\""+url+endPoint+"\", \"type\":\"GET\"}";
+		Executor executor = new Executor();
+		JsonNode jsonResponse = null;
+		try {
+			jsonResponse = executor.execute(jsonRequestPayload);
+		}catch(Exception e) {
+			
+		}
+		
+		assertThat(jsonResponse.at("/response/statusCode").intValue()).isEqualTo(200);
+		
+		assertThat(jsonResponse.at("/response/payload").textValue()).isEqualTo(body);
+		
+		assertThat(jsonResponse.at("/expressionResult").isNull()).isTrue();
 	}
 
 }
