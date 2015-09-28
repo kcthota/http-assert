@@ -32,11 +32,11 @@ public class Request {
 	
 	@Setter
 	@Getter
-	private String assertExpression;
+	private String expression;
 	
 	@Getter
 	@Setter
-	private Object assertResult;
+	private Object expressionResult;
 	
 
 	public Request() {

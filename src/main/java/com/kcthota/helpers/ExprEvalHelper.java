@@ -26,7 +26,7 @@ public class ExprEvalHelper {
 	private static Pattern pattern = Pattern.compile("\\$\\{([^}]*)\\}");
 	
 	public void eval(Request request) {
-		String assertExpression = request.getAssertExpression();
+		String assertExpression = request.getExpression();
 		log.debug("Assert Expression before formatting: "+assertExpression);
 		if(assertExpression==null) {
 			return;
@@ -36,7 +36,7 @@ public class ExprEvalHelper {
 		
 		log.debug("Assert Expression after formatting: "+formattedExpression);
 		try {
-			request.setAssertResult(engine.eval(formattedExpression));
+			request.setExpressionResult(engine.eval(formattedExpression));
 		} catch (ScriptException e) {
 			log.warn(e.getMessage(), e);
 		}

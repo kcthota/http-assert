@@ -2,14 +2,20 @@ package com.kcthota.test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.UUID;
 
 import org.junit.Rule;
 import org.junit.Test;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.kcthota.enums.RequestType;
 import com.kcthota.http.Request;
+import com.kcthota.http.Response;
 
 public class BasicTest {
 	
@@ -19,20 +25,75 @@ public class BasicTest {
 	
 	@Rule
 	public WireMockRule wireMockRule = new WireMockRule(port);
-
+	
 	@Test
-	public void simpleGetTest() {
+	public void simpleGetJsonTest() {
+		String endPoint ="/"+UUID.randomUUID().toString();
+		String body = "{\"a\":\"b\"}";
 		
-		stubFor(get(urlEqualTo("/simpleGet"))
+		stubFor(get(urlEqualTo(endPoint))
 	            .willReturn(aResponse()
 	                .withStatus(200)
 	                .withHeader("Content-Type", "application/json")
-	                .withBody("{\"a\":\"b\"}")));
+	                .withBody(body)));
 		
-		Request request = new Request(url+"/simpleGet");
+		Request request = new Request(url+endPoint);
 		
-		request.setAssertExpression("${response/statusCode} == 200");
+		request.setExpression("${response/statusCode} == 200");
 		request.execute();
+		
+		Response response = request.getResponse();
+		assertThat(response.getStatusCode()).isEqualTo(200);
+		assertThat(response.getPayload()).isEqualTo(body);
+		
+		assertThat(request.getExpressionResult()).isEqualTo(true);
+	}
+	
+	@Test
+	public void simpleGetHtmlTest() {
+		String endPoint ="/"+UUID.randomUUID().toString();
+		String body = "ok";
+		
+		stubFor(get(urlEqualTo(endPoint))
+	            .willReturn(aResponse()
+	                .withStatus(200)
+	                .withHeader("Content-Type", "text/html")
+	                .withBody(body)));
+		
+		Request request = new Request(url+endPoint);
+		
+		request.setExpression("'${response/payload}' == 'ok'");
+		request.execute();
+		
+		Response response = request.getResponse();
+		assertThat(response.getStatusCode()).isEqualTo(200);
+		assertThat(response.getPayload()).isEqualTo(body);
+		
+		assertThat(request.getExpressionResult()).isEqualTo(true);
+	}
+	
+	@Test
+	public void simplePOSTJsonTest() {
+		String endPoint ="/"+UUID.randomUUID().toString();
+		String body = "{\"a\":\"b\"}";
+		
+		stubFor(post(urlEqualTo(endPoint))
+	            .willReturn(aResponse()
+	                .withStatus(200)
+	                .withHeader("Content-Type", "application/json")
+	                .withHeader("customheader", "somevalue")
+	                .withBody(body)));
+		
+		Request request = new Request(url+endPoint, RequestType.POST, body);
+		
+		request.setExpression("${response/statusCode} == 200 && '${response/headers/customheader}' === 'somevalue'");
+		request.execute();
+		
+		Response response = request.getResponse();
+		assertThat(response.getStatusCode()).isEqualTo(200);
+		assertThat(response.getPayload()).isEqualTo(body);
+		
+		assertThat(request.getExpressionResult()).isEqualTo(true);
 	}
 
 }

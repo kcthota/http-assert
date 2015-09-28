@@ -9,9 +9,11 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.kcthota.helpers.ExprEvalHelper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -32,7 +34,11 @@ public class Executor {
 					.asString();
 			request.setResponse(processHttpResponse(httpResponse));
 			evalHelper.eval(request);
-			
+			try {
+				log.trace(mapper.writer().with(SerializationFeature.INDENT_OUTPUT).writeValueAsString(request));
+			} catch (JsonProcessingException e) {
+				log.trace(e.getMessage(), e);
+			}
 		} catch (UnirestException e) {
 			log.error(e.getMessage(), e);
 		}
