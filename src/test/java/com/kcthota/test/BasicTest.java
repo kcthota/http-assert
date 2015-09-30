@@ -20,108 +20,109 @@ import com.kcthota.http.Request;
 import com.kcthota.http.Response;
 
 public class BasicTest {
-	
+
 	private static final int port = 8080;
-	
-	private static final String url = "http://localhost:"+port;
-	
+
+	private static final String url = "http://localhost:" + port;
+
 	@Rule
 	public WireMockRule wireMockRule = new WireMockRule(port);
-	
+
 	@Test
 	public void simpleGetJsonTest() {
-		String endPoint ="/"+UUID.randomUUID().toString();
+		String endPoint = "/" + UUID.randomUUID().toString();
 		String body = "{\"a\":\"b\"}";
-		
-		stubFor(get(urlEqualTo(endPoint))
-	            .willReturn(aResponse()
-	                .withStatus(200)
-	                .withHeader("Content-Type", "application/json")
-	                .withBody(body)));
-		
-		Request request = new Request(url+endPoint);
-		
+
+		stubFor(get(urlEqualTo(endPoint)).willReturn(
+				aResponse().withStatus(200)
+						.withHeader("Content-Type", "application/json")
+						.withBody(body)));
+
+		Request request = new Request(url + endPoint);
+
 		request.setExpression("${response/statusCode} == 200");
 		request.execute();
-		
+
 		Response response = request.getResponse();
 		assertThat(response.getStatusCode()).isEqualTo(200);
 		assertThat(response.getPayload()).isEqualTo(body);
-		
+
 		assertThat(request.getExpressionResult()).isEqualTo(true);
 	}
-	
+
 	@Test
 	public void simpleGetHtmlTest() {
-		String endPoint ="/"+UUID.randomUUID().toString();
+		String endPoint = "/" + UUID.randomUUID().toString();
 		String body = "ok";
-		
+
 		stubFor(get(urlEqualTo(endPoint))
-	            .willReturn(aResponse()
-	                .withStatus(200)
-	                .withHeader("Content-Type", "text/html")
-	                .withBody(body)));
-		
-		Request request = new Request(url+endPoint);
-		
+				.willReturn(
+						aResponse().withStatus(200)
+								.withHeader("Content-Type", "text/html")
+								.withBody(body)));
+
+		Request request = new Request(url + endPoint);
+
 		request.setExpression("'${response/payload}' == 'ok'");
 		request.execute();
-		
+
 		Response response = request.getResponse();
 		assertThat(response.getStatusCode()).isEqualTo(200);
 		assertThat(response.getPayload()).isEqualTo(body);
-		
+
 		assertThat(request.getExpressionResult()).isEqualTo(true);
 	}
-	
+
 	@Test
 	public void simplePOSTJsonTest() {
-		String endPoint ="/"+UUID.randomUUID().toString();
+		String endPoint = "/" + UUID.randomUUID().toString();
 		String body = "{\"a\":\"b\"}";
-		
+
 		stubFor(post(urlEqualTo(endPoint))
-	            .willReturn(aResponse()
-	                .withStatus(200)
-	                .withHeader("Content-Type", "application/json")
-	                .withHeader("customheader", "somevalue")
-	                .withBody(body)));
-		
-		Request request = new Request(url+endPoint, RequestType.POST, body);
-		
+				.willReturn(
+						aResponse().withStatus(200)
+								.withHeader("Content-Type", "application/json")
+								.withHeader("customheader", "somevalue")
+								.withBody(body)));
+
+		Request request = new Request(url + endPoint, RequestType.POST, body);
+
 		request.setExpression("${response/statusCode} == 200 && '${response/headers/customheader}' === 'somevalue'");
 		request.execute();
-		
+
 		Response response = request.getResponse();
 		assertThat(response.getStatusCode()).isEqualTo(200);
 		assertThat(response.getPayload()).isEqualTo(body);
-		
+
 		assertThat(request.getExpressionResult()).isEqualTo(true);
 	}
-	
+
 	@Test
 	public void ExecGetWithJsonTest() {
-		String endPoint ="/"+UUID.randomUUID().toString();
+		String endPoint = "/" + UUID.randomUUID().toString();
 		String body = "{\"a\":\"b\"}";
-		
-		stubFor(get(urlEqualTo(endPoint))
-	            .willReturn(aResponse()
-	                .withStatus(200)
-	                .withHeader("Content-Type", "application/json")
-	                .withBody(body)));
-		
-		String jsonRequestPayload = "{\"url\":\""+url+endPoint+"\", \"type\":\"GET\"}";
+
+		stubFor(get(urlEqualTo(endPoint)).willReturn(
+				aResponse().withStatus(200)
+						.withHeader("Content-Type", "application/json")
+						.withBody(body)));
+
+		String jsonRequestPayload = "{\"url\":\"" + url + endPoint
+				+ "\", \"type\":\"GET\"}";
 		Executor executor = new Executor();
 		JsonNode jsonResponse = null;
 		try {
 			jsonResponse = executor.execute(jsonRequestPayload);
-		}catch(Exception e) {
-			
+		} catch (Exception e) {
+
 		}
-		
-		assertThat(jsonResponse.at("/response/statusCode").intValue()).isEqualTo(200);
-		
-		assertThat(jsonResponse.at("/response/payload").textValue()).isEqualTo(body);
-		
+
+		assertThat(jsonResponse.at("/response/statusCode").intValue())
+				.isEqualTo(200);
+
+		assertThat(jsonResponse.at("/response/payload").textValue()).isEqualTo(
+				body);
+
 		assertThat(jsonResponse.at("/expressionResult").isNull()).isTrue();
 	}
 
