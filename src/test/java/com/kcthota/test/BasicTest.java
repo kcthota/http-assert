@@ -87,7 +87,35 @@ public class BasicTest {
 
 		Request request = new Request(url + endPoint, RequestType.POST, body);
 
-		request.setExpression("${response/statusCode} == 200 && '${response/headers/customheader}' === 'somevalue'");
+		request.setExpression("${response/statusCode} == 200 && '${response/headers/customheader/0}' === 'somevalue'");
+		request.execute();
+
+		Response response = request.getResponse();
+		assertThat(response.getStatusCode()).isEqualTo(200);
+		assertThat(response.getPayload()).isEqualTo(body);
+
+		assertThat(request.getExpressionResult()).isEqualTo(true);
+	}
+
+	@Test
+	public void cookieTest() {
+		String endPoint = "/" + UUID.randomUUID().toString();
+		String body = "{\"a\":\"b\"}";
+
+		stubFor(post(urlEqualTo(endPoint))
+				.willReturn(
+						aResponse()
+								.withStatus(200)
+								.withHeader("Content-Type", "application/json")
+								.withHeader("Set-Cookie",
+										"username=John Doe1; expires=Sat, 01-Jan-2018 00:00:00 GMT; path=/")
+								.withHeader("Set-Cookie",
+										"username2=John Doe2; expires=Sat, 01-Jan-2018 00:00:00 GMT; path=/")
+								.withBody(body)));
+
+		Request request = new Request(url + endPoint, RequestType.POST, body);
+
+		request.setExpression("${response/statusCode} == 200 && '${response/cookies/username}' == 'John Doe1'");
 		request.execute();
 
 		Response response = request.getResponse();

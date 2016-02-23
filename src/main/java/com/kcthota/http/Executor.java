@@ -8,6 +8,9 @@ import lombok.NonNull;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.HttpClients;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -24,9 +27,11 @@ import com.mashape.unirest.request.HttpRequestWithBody;
 @Slf4j
 public class Executor {
 
-	private static ObjectMapper mapper = new ObjectMapper();
-	private static ExprEvalHelper evalHelper=new ExprEvalHelper();
+	final BasicCookieStore cookieStore = new BasicCookieStore();
 	
+	private static ObjectMapper mapper = new ObjectMapper();
+	private static ExprEvalHelper evalHelper = new ExprEvalHelper();
+
 	public void execute(@NonNull Request request) {
 
 		try {
@@ -35,7 +40,9 @@ public class Executor {
 			request.setResponse(processHttpResponse(httpResponse));
 			evalHelper.eval(request);
 			try {
-				log.trace(mapper.writer().with(SerializationFeature.INDENT_OUTPUT).writeValueAsString(request));
+				log.trace(mapper.writer()
+						.with(SerializationFeature.INDENT_OUTPUT)
+						.writeValueAsString(request));
 			} catch (JsonProcessingException e) {
 				log.trace(e.getMessage(), e);
 			}
@@ -43,8 +50,9 @@ public class Executor {
 			log.error(e.getMessage(), e);
 		}
 	}
-	
-	public JsonNode execute(String json) throws JsonParseException, JsonMappingException, IOException {
+
+	public JsonNode execute(String json) throws JsonParseException,
+			JsonMappingException, IOException {
 		Request request = mapper.readValue(json, Request.class);
 		execute(request);
 		return mapper.valueToTree(request);
@@ -54,16 +62,21 @@ public class Executor {
 		val response = new Response();
 		response.setStatusCode(httpResponse.getStatus());
 		response.setPayload(httpResponse.getBody());
+
 		// process headers to map
 		httpResponse.getHeaders().forEach(
 				new BiConsumer<String, List<String>>() {
 					public void accept(String key, List<String> values) {
 						if (values.size() > 0) {
-							response.addHeader(key, values.get(0));
+							response.addHeader(key, values);
 						}
 					}
 				});
 
+		cookieStore.getCookies().forEach(cookie -> {
+			response.addCookie(cookie.getName(), cookie.getValue());
+		});
+		
 		// attempt to convert body to jsonNode
 		try {
 			response.setJsonPayload(mapper.readTree(httpResponse.getBody()));
@@ -71,12 +84,14 @@ public class Executor {
 			// ignore any exceptions if the body is not in json
 			log.debug("Body not in json format");
 		}
-		
+
 		return response;
 	}
 
 	private HttpRequest getHttpRequest(Request request) {
 		HttpRequest httpRequest = null;
+		Unirest.setHttpClient(HttpClients.custom().setDefaultCookieStore(cookieStore).build());
+
 		switch (request.getType()) {
 		case GET:
 			httpRequest = Unirest.get(request.getUrl());
@@ -101,18 +116,18 @@ public class Executor {
 			httpRequest = Unirest.head(request.getUrl());
 			break;
 		default:
-			log.warn("Not a supported HTTP Request Method: "+request.getType());
+			log.warn("Not a supported HTTP Request Method: "
+					+ request.getType());
 		}
-		
+
 		return httpRequest;
 	}
-	
+
 	private void setPayload(Request request, HttpRequest httpRequest) {
 		String payload = request.getPayload();
-		if(payload!=null) {
+		if (payload != null) {
 			((HttpRequestWithBody) httpRequest).body(request.getPayload());
 		}
 	}
-	
-	
+
 }
