@@ -27,9 +27,10 @@ import com.mashape.unirest.request.HttpRequestWithBody;
 @Slf4j
 public class Executor {
 
-	final BasicCookieStore cookieStore = new BasicCookieStore();
+	private final BasicCookieStore cookieStore = new BasicCookieStore();
 	
 	private static ObjectMapper mapper = new ObjectMapper();
+	
 	private static ExprEvalHelper evalHelper = new ExprEvalHelper();
 
 	public void execute(@NonNull Request request) {
