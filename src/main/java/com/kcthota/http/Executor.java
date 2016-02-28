@@ -96,25 +96,31 @@ public class Executor {
 		switch (request.getType()) {
 		case GET:
 			httpRequest = Unirest.get(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			break;
 		case POST:
 			httpRequest = Unirest.post(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			setPayload(request, httpRequest);
 			break;
 		case PUT:
 			httpRequest = Unirest.put(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			setPayload(request, httpRequest);
 			break;
 		case PATCH:
 			httpRequest = Unirest.patch(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			setPayload(request, httpRequest);
 			break;
 		case DELETE:
 			httpRequest = Unirest.delete(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			setPayload(request, httpRequest);
 			break;
 		case HEAD:
 			httpRequest = Unirest.head(request.getUrl());
+			httpRequest.headers(request.getHeaders());
 			break;
 		default:
 			log.warn("Not a supported HTTP Request Method: "
